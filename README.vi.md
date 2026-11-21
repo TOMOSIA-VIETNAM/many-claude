@@ -1,8 +1,22 @@
-# mclaude — Mỗi dự án một account Claude Code
+<h1 align="center">
+  <img src="assets/logo.svg" alt="mclaude" width="480">
+</h1>
 
-[![test](https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml)
+<h3 align="center">Mỗi dự án một account Claude Code.<br>Tự đổi account khi bạn <code>cd</code>.</h3>
 
-[English](README.md) | Tiếng Việt
+<p align="center">
+  <code>mclaude add</code> · <code>mclaude bind</code> · <code>mclaude which</code>
+</p>
+
+<p align="center">
+  <a href="https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml"><img alt="test" src="https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml/badge.svg?branch=master"></a>
+  <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+  <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-000000?logo=apple&logoColor=white">
+  <img alt="zsh" src="https://img.shields.io/badge/shell-zsh-4EAA25?logo=gnubash&logoColor=white">
+  <img alt="Claude Code" src="https://img.shields.io/badge/Claude%20Code-supported-D97757?logo=claude&logoColor=white">
+</p>
+
+<p align="center"><a href="README.md">English</a> · Tiếng Việt</p>
 
 `mclaude` giúp bạn dùng nhiều account Claude Code (subscription) trên cùng một máy. Mỗi dự án được gắn với một account; khi bạn `cd` vào thư mục dự án và gõ `claude`, account tương ứng sẽ tự động được dùng.
 
