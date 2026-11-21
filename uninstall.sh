@@ -1,15 +1,18 @@
 #!/bin/zsh
-# Uninstall many-claude: remove the ~/.zshrc hook and ~/.many-claude.
+# Uninstall mclaude: remove the ~/.zshrc hook and ~/.mclaude.
 # Profiles hold logins, memory and history; they are deleted only after confirmation
 # (or with --purge). ~/.claude (default profile) is never touched.
 set -e
-home=$HOME/.many-claude
+home=$HOME/.mclaude
 rc=$HOME/.zshrc
 purge=0
 [[ $1 == --purge ]] && purge=1
 
 if [[ -f $rc ]]; then
-  sed -i '' -e '/^# many-claude$/d' -e '/\.many-claude\/ccp\.zsh/d' -e '/\.many-claude\/mclaude\.zsh/d' $rc
+  sed -i '' \
+    -e '/^# mclaude$/d' -e '/\.mclaude\/mclaude\.zsh/d' \
+    -e '/^# many-claude$/d' -e '/\.many-claude\/ccp\.zsh/d' -e '/\.many-claude\/mclaude\.zsh/d' \
+    $rc
 fi
 
 profiles=($home/profiles/*(N/))
@@ -30,4 +33,4 @@ if (( ${#profiles} )); then
 fi
 
 rm -rf $home
-print "many-claude uninstalled. Open a new terminal (or exec zsh) to drop mclaude from this shell."
+print "mclaude uninstalled. Open a new terminal (or exec zsh) to drop mclaude from this shell."

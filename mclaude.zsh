@@ -1,8 +1,8 @@
-# many-claude: per-project Claude Code accounts (zsh). Command: mclaude.
+# mclaude: per-project Claude Code accounts (zsh). Command: mclaude.
 # Source from ~/.zshrc. Picks CLAUDE_CONFIG_DIR from $PWD via a map file kept
 # outside every project, so nothing is written into project folders.
 
-: ${MCLAUDE_HOME:=$HOME/.many-claude}                # tool home: script + map file
+: ${MCLAUDE_HOME:=$HOME/.mclaude}                # tool home: script + map file
 : ${MCLAUDE_PROFILES:=$MCLAUDE_HOME/profiles}            # one config dir per account
 : ${MCLAUDE_BASE:=$HOME/.claude}                     # "default" profile, shared config source
 MCLAUDE_MAP="$MCLAUDE_HOME/projects.conf"
