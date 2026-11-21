@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml"><img alt="test" src="https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml/badge.svg?branch=master"></a>
+  <a href="https://github.com/TOMOSIA-VIETNAM/mclaude/releases"><img alt="release" src="https://img.shields.io/github/v/release/TOMOSIA-VIETNAM/mclaude?color=4c1"></a>
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
   <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-000000?logo=apple&logoColor=white">
   <img alt="zsh" src="https://img.shields.io/badge/shell-zsh-4EAA25?logo=gnubash&logoColor=white">
