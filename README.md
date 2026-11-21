@@ -1,98 +1,103 @@
-# many-claude — Mỗi dự án một account Claude Code
+# many-claude — One Claude Code account per project
 
-`many-claude` giúp bạn dùng nhiều account Claude Code (subscription) trên cùng một máy. Mỗi dự án được gắn với một account; khi bạn `cd` vào thư mục dự án và gõ `claude`, account tương ứng sẽ tự động được dùng.
+English | [Tiếng Việt](README.vi.md)
 
-- Không ghi bất kỳ file nào vào thư mục dự án — không lo commit nhầm.
-- Settings, skills, plugins, hooks, `CLAUDE.md` dùng chung giữa các account.
-- Chỉ dành cho Claude Code CLI trên zsh (macOS).
+`many-claude` lets you use several Claude Code (subscription) accounts on one machine. Each project is bound to an account; when you `cd` into the project and run `claude`, the matching account is used automatically.
 
-Lệnh điều khiển là `mclaude` (many-claude). Đây là shell function do tool này định nghĩa (không phải lệnh có sẵn của hệ thống hay của Claude Code), được nạp vào zsh khi cài đặt.
+- Writes nothing into project folders — nothing to accidentally commit.
+- Settings, skills, plugins, hooks and `CLAUDE.md` are shared across accounts.
+- Claude Code CLI on zsh (macOS) only.
 
-## Cách hoạt động
+The control command is `mclaude` (many-claude). It is a shell function defined by this tool (not a system or Claude Code command), loaded into zsh at install time.
 
-Claude Code đọc biến môi trường `CLAUDE_CONFIG_DIR` để biết thư mục config (gồm phiên đăng nhập, history, memory). Tool tạo cho mỗi account một thư mục config riêng, và bọc lệnh `claude` bằng một shell function:
+## How it works
 
-1. Lấy thư mục hiện tại (`$PWD`).
-2. Tra trong file map `~/.many-claude/projects.conf`, chọn dòng có đường dẫn khớp **dài nhất** (thư mục con kế thừa profile của thư mục cha).
-3. Đặt `CLAUDE_CONFIG_DIR=~/.many-claude/profiles/<profile>` rồi chạy Claude Code thật.
-4. Nếu không khớp dòng nào → dùng `~/.claude` như bình thường (profile `default`).
+Claude Code reads the `CLAUDE_CONFIG_DIR` environment variable to locate its config directory (login session, history, memory). The tool gives each account its own config directory and wraps the `claude` command in a shell function:
+
+1. Take the current directory (`$PWD`).
+2. Look it up in the map file `~/.many-claude/projects.conf` and pick the line with the **longest** matching path (subdirectories inherit their parent's profile).
+3. Set `CLAUDE_CONFIG_DIR=~/.many-claude/profiles/<profile>` and run the real Claude Code.
+4. If nothing matches, use `~/.claude` as usual (the `default` profile).
 
 ```
-~/.claude/                         # profile "default" + nguồn config dùng chung (không bị tool sửa)
-~/.many-claude/                    # mọi thứ của tool nằm ở đây
-├── mclaude.zsh                        # script, được source từ ~/.zshrc
-├── projects.conf                  # map: đường dẫn → profile
+~/.claude/                         # "default" profile + shared config source (never modified by the tool)
+~/.many-claude/                    # everything the tool owns lives here
+├── mclaude.zsh                    # the script, sourced from ~/.zshrc
+├── projects.conf                  # map: path → profile
 └── profiles/
     ├── client-x/                  # account B
     │   ├── settings.json -> ~/.claude/settings.json
     │   ├── skills        -> ~/.claude/skills
-    │   ├── ...                    # các symlink dùng chung khác
-    │   ├── .claude.json           # riêng: thông tin account, onboarding
-    │   └── projects/              # riêng: memory, history
+    │   ├── ...                    # other shared symlinks
+    │   ├── .claude.json           # private: account info, onboarding
+    │   └── projects/              # private: memory, history
     └── client-y/                  # account C
 ```
 
-## Cài đặt
+## Install
 
-Một lệnh:
+One command:
 
 ```zsh
 ./install.sh && source ~/.zshrc
 ```
 
-`install.sh` sẽ:
-- Tạo `~/.many-claude/` (gồm `profiles/` và `projects.conf`) và **copy** `mclaude.zsh` vào đó — cài xong có thể xoá thư mục repo.
-- Thêm một dòng `source ~/.many-claude/mclaude.zsh` vào cuối `~/.zshrc` (chỉ thêm một lần).
-- Dọn layout cũ `~/.config/claude-switch` nếu có.
+`install.sh` will:
+- Create `~/.many-claude/` (with `profiles/` and `projects.conf`) and **copy** `mclaude.zsh` into it — you can delete the repo afterwards.
+- Append one `source ~/.many-claude/mclaude.zsh` line to `~/.zshrc` (only once).
+- Clean up the old `~/.config/claude-switch` layout if present.
 
-Chạy lại `install.sh` bất cứ lúc nào để cập nhật script; profile và binding được giữ nguyên.
+Re-run `install.sh` any time to update the script; profiles and bindings are kept.
 
-Kiểm tra:
+`source ~/.zshrc` loads `mclaude` into the current terminal; new terminals get it automatically.
+
+Check:
 
 ```zsh
 mclaude list
 mclaude which
 ```
 
-## Bắt đầu nhanh
+## Quick start
 
-Ví dụ: gắn account công ty B cho mọi dự án trong `~/Project/ClientX`.
+Example: use company B's account for every project under `~/Project/ClientX`.
 
 ```zsh
-mclaude add client-x                          # 1. tạo profile
-mclaude login client-x                        # 2. đăng nhập account B (mở browser)
-mclaude bind client-x ~/Project/ClientX       # 3. gắn thư mục với profile
+mclaude add client-x                      # 1. create the profile
+mclaude login client-x                    # 2. sign in to account B (opens a browser)
+mclaude bind client-x ~/Project/ClientX   # 3. bind the folder to the profile
 
 cd ~/Project/ClientX/api
-claude                                    # → chạy với account B
+claude                                    # → runs with account B
 ```
 
-Kiểm tra account đang dùng:
+Check which account is in use:
 
 ```zsh
-cd ~/Project/ClientX && mclaude status        # account B
-mclaude status default                        # account gốc, không bị ảnh hưởng
+cd ~/Project/ClientX && mclaude status    # account B
+mclaude status default                    # original account, unaffected
 ```
 
-## Các lệnh
+## Commands
 
-| Lệnh | Mô tả |
+| Command | Description |
 |---|---|
-| `mclaude` / `mclaude which` | In profile và thư mục config áp dụng cho thư mục hiện tại |
-| `mclaude list` | Liệt kê các profile và toàn bộ binding |
-| `mclaude add <profile>` | Tạo profile mới trong `~/.many-claude/profiles/<profile>` và tạo symlink config dùng chung |
-| `mclaude login [profile]` | Đăng nhập cho profile (mặc định: profile của thư mục hiện tại) |
-| `mclaude logout [profile]` | Đăng xuất profile |
-| `mclaude status [profile]` | Xem trạng thái đăng nhập của profile |
-| `mclaude bind <profile> [path]` | Gắn thư mục với profile (mặc định: thư mục hiện tại). Bind lại cùng thư mục sẽ ghi đè, không tạo dòng trùng |
-| `mclaude unbind [path]` | Bỏ gắn thư mục (mặc định: thư mục hiện tại) |
-| `claude ...` | Chạy Claude Code với profile của thư mục hiện tại; mọi tham số được chuyển tiếp nguyên vẹn |
+| `mclaude` / `mclaude which` | Print the profile and config dir for the current directory |
+| `mclaude list` | List profiles and all bindings |
+| `mclaude add <profile>` | Create a profile in `~/.many-claude/profiles/<profile>` with shared-config symlinks |
+| `mclaude login [profile]` | Sign in for a profile (default: the current directory's profile) |
+| `mclaude logout [profile]` | Sign out of a profile |
+| `mclaude status [profile]` | Show a profile's sign-in status |
+| `mclaude bind <profile> [path]` | Bind a folder to a profile (default: current directory). Re-binding the same folder replaces the old line |
+| `mclaude unbind [path]` | Remove a folder's binding (default: current directory) |
+| `mclaude help` | Show usage |
+| `claude ...` | Run Claude Code with the current directory's profile; all arguments are passed through unchanged |
 
-Tên `default` được dành riêng cho `~/.claude`.
+The name `default` is reserved for `~/.claude`.
 
-## File map `projects.conf`
+## The `projects.conf` map
 
-Mỗi dòng: `<đường dẫn> <profile>`. Profile là từ cuối cùng, nên đường dẫn được phép chứa dấu cách. Dòng bắt đầu bằng `#` là comment. Có thể dùng `~`.
+Each line: `<path> <profile>`. The profile is the last word, so paths may contain spaces. Lines starting with `#` are comments. `~` is allowed.
 
 ```
 # ~/.many-claude/projects.conf
@@ -101,61 +106,75 @@ Mỗi dòng: `<đường dẫn> <profile>`. Profile là từ cuối cùng, nên 
 ~/Project/My Side Project               personal
 ```
 
-Với ví dụ trên:
+With the map above:
 
-| Thư mục hiện tại | Profile |
+| Current directory | Profile |
 |---|---|
 | `~/Project/ClientX/api` | `client-x` |
-| `~/Project/ClientX/legacy/web` | `client-y` (khớp dài hơn) |
+| `~/Project/ClientX/legacy/web` | `client-y` (longer match) |
 | `~/Project/My Side Project` | `personal` |
 | `~/Downloads` | `default` |
 
-Bạn có thể sửa file này bằng tay hoặc dùng `mclaude bind` / `mclaude unbind`. Đường dẫn đi qua symlink được resolve về đường dẫn thật trước khi so khớp.
+Edit the file by hand or use `mclaude bind` / `mclaude unbind`. Paths reached through symlinks are resolved to their real path before matching.
 
-## Config dùng chung
+## Shared config
 
-Khi tạo profile (hoặc lần đầu chạy `claude` với profile đó), các mục sau trong `~/.claude` được symlink sang profile nếu tồn tại:
+When a profile is created (and each time `claude` runs with it), these items from `~/.claude` are symlinked into the profile if they exist:
 
 ```
 settings.json  CLAUDE.md  RTK.md  keybindings.json  skills  plugins
 hooks  agents  commands  output-styles  statusline.sh
 ```
 
-Sửa ở `~/.claude` là mọi profile cùng nhận. Muốn chia sẻ thêm mục khác, thêm vào mảng `MCLAUDE_SHARED` trong `mclaude.zsh`. Muốn một profile dùng config riêng cho một mục, xoá symlink trong thư mục profile và đặt file thật vào đó — `mclaude` không ghi đè file đã có.
+Change something in `~/.claude` and every profile sees it. To share more items, add them to the `MCLAUDE_SHARED` array in `mclaude.zsh`. To give one profile its own copy of an item, delete the symlink in the profile folder and put a real file there — `mclaude` never overwrites existing files.
 
-**Không dùng chung** (riêng từng profile): phiên đăng nhập, `.claude.json` (thông tin account, MCP server cấp user), `projects/` (memory, history theo dự án).
+**Not shared** (per profile): login session, `.claude.json` (account info, user-scope MCP servers), `projects/` (per-project memory and history).
 
-## Biến môi trường tuỳ chỉnh
+## Environment variables
 
-Đặt trước dòng `source` trong `~/.zshrc` nếu muốn đổi vị trí mặc định:
+Set these before the `source` line in `~/.zshrc` to change the default locations:
 
-| Biến | Mặc định | Ý nghĩa |
+| Variable | Default | Meaning |
 |---|---|---|
-| `MCLAUDE_HOME` | `~/.many-claude` | Nơi chứa `projects.conf` |
-| `MCLAUDE_PROFILES` | `$MCLAUDE_HOME/profiles` | Nơi chứa thư mục các profile |
-| `MCLAUDE_BASE` | `~/.claude` | Profile `default` và nguồn config dùng chung |
+| `MCLAUDE_HOME` | `~/.many-claude` | Where `projects.conf` lives |
+| `MCLAUDE_PROFILES` | `$MCLAUDE_HOME/profiles` | Where profile folders live |
+| `MCLAUDE_BASE` | `~/.claude` | The `default` profile and shared-config source |
 
-## Lưu ý
+## Notes
 
-- **Không đổi account giữa session.** Profile được chọn lúc chạy `claude`. Đang trong session mà chuyển dự án thì cần thoát và chạy lại.
-- **Override thủ công:** nếu `CLAUDE_CONFIG_DIR` đã được đặt sẵn trong môi trường, wrapper tôn trọng giá trị đó và không tra map. Ví dụ chạy tạm một account khác: `CLAUDE_CONFIG_DIR=~/.many-claude/profiles/client-y claude`.
-- **MCP server cấp user** nằm trong `.claude.json` của từng profile, nên cần thêm lại cho mỗi profile (`claude mcp add --scope user ...`).
-- **Chỉ CLI zsh.** Extension VS Code/JetBrains, script dùng `sh`/`bash`, hoặc gọi trực tiếp binary (`command claude`, `~/.local/bin/claude`) sẽ không đi qua wrapper.
-- **Keychain macOS:** phiên đăng nhập subscription được lưu trong Keychain. Sau lần login đầu tiên cho một profile mới, hãy chạy `mclaude status default` để chắc account gốc không bị thay thế. Nếu bị thay thế, các profile đang dùng chung một mục Keychain — hãy báo lại để chuyển sang cơ chế token riêng (`claude setup-token`).
-- Nếu `mclaude login` không chạy được với phiên bản Claude Code của bạn, vào thư mục dự án, chạy `claude` rồi gõ `/login`.
+- **No account switch mid-session.** The profile is chosen when `claude` starts. If you move to another project during a session, exit and start again.
+- **Manual override:** if `CLAUDE_CONFIG_DIR` is already set in the environment, the wrapper respects it and skips the map. Example of a one-off run with another account: `CLAUDE_CONFIG_DIR=~/.many-claude/profiles/client-y claude`.
+- **User-scope MCP servers** live in each profile's `.claude.json`, so add them again per profile (`claude mcp add --scope user ...`).
+- **zsh CLI only.** VS Code/JetBrains extensions, `sh`/`bash` scripts, or calling the binary directly (`command claude`, `~/.local/bin/claude`) bypass the wrapper.
+- **macOS Keychain:** subscription logins are stored in the Keychain. After the first login for a new profile, run `mclaude status default` to make sure the original account was not replaced. If it was, profiles are sharing one Keychain entry — please report it so we can switch to per-profile tokens (`claude setup-token`).
+- If `mclaude login` does not work with your Claude Code version, go to the project folder, run `claude`, then type `/login`.
 
-## Gỡ cài đặt
+## Running tests
 
-Một lệnh:
+```zsh
+zsh tests/test.zsh
+```
+
+No dependencies. Each test runs in a temporary HOME with a fake `claude`, so the real `~/.claude`, `~/.many-claude` and `~/.zshrc` are never touched. Covered: profile resolution (subdirectories, longest match, sibling paths, spaces, symlinks, `~`, comments), the `CLAUDE_CONFIG_DIR` override, profile creation and shared symlinks, `bind`/`unbind`/`list`/`which`/`help`, `login`/`logout`/`status`, robustness against user shell options, `install.sh` (fresh, re-run, old-layout migration) and `uninstall.sh` (keep or delete profiles, including the interactive prompt).
+
+The tests do not cover real sign-in or the Keychain — check those by hand with real accounts.
+
+## Uninstall
+
+One command:
 
 ```zsh
 ./uninstall.sh
 ```
 
-- Xoá dòng `source` trong `~/.zshrc`.
-- Nếu có profile, script hỏi có xoá không (mặc định **không**):
-  - Trả lời `N`: chỉ gỡ `mclaude.zsh` và `projects.conf`, giữ lại `~/.many-claude/profiles/` — cài lại sau sẽ dùng tiếp được.
-  - Trả lời `y`: đăng xuất từng profile rồi xoá toàn bộ `~/.many-claude`. **Thao tác này xoá vĩnh viễn phiên đăng nhập, memory và history của các account đó.**
-- Gỡ sạch không cần hỏi (dùng cho script): `./uninstall.sh --purge`.
+- Removes the `source` line from `~/.zshrc`.
+- If profiles exist, asks whether to delete them (default **no**):
+  - `N`: removes only `mclaude.zsh` and `projects.conf`, keeping `~/.many-claude/profiles/` — reinstall later to keep using them.
+  - `y`: signs out of each profile, then deletes all of `~/.many-claude`. **This permanently deletes the login sessions, memory and history of those accounts.**
+- Remove everything without asking (for scripts): `./uninstall.sh --purge`.
 
-`~/.claude` (profile `default`) không bao giờ bị động tới. Sau khi gỡ, mở terminal mới (hoặc `exec zsh`) để shell hiện tại không còn lệnh `mclaude`.
+`~/.claude` (the `default` profile) is never touched. After uninstalling, open a new terminal (or run `exec zsh`) so the current shell drops `mclaude`.
+
+## License
+
+[MIT](LICENSE)
