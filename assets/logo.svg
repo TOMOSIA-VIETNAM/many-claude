@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="720" height="180" viewBox="0 0 720 180" role="img" aria-label="mclaude">
+  <title>mclaude</title>
+  <style>
+    .word { fill: #1f1f1f; }
+    .gap { stroke: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .word { fill: #f0f0f0; }
+      .gap { stroke: #0d1117; }
+    }
+  </style>
+  <defs>
+    <!-- One account: a 12x8 pixel critter. Body takes the fill of the <use>. -->
+    <symbol id="critter" viewBox="0 0 12 8" overflow="visible">
+      <rect x="1" y="0" width="10" height="6"/>
+      <rect x="0" y="2" width="1" height="2"/>
+      <rect x="11" y="2" width="1" height="2"/>
+      <rect x="2" y="6" width="1" height="2"/>
+      <rect x="4" y="6" width="1" height="2"/>
+      <rect x="7" y="6" width="1" height="2"/>
+      <rect x="9" y="6" width="1" height="2"/>
+      <rect x="3" y="1" width="1" height="2" fill="#2b1a14" stroke="none"/>
+      <rect x="8" y="1" width="1" height="2" fill="#2b1a14" stroke="none"/>
+    </symbol>
+  </defs>
+
+  <!-- Three accounts, one in front -->
+  <use xlink:href="#critter" href="#critter" x="8" y="12" width="120" height="80" fill="#f2b8a0"/>
+  <use xlink:href="#critter" href="#critter" x="136" y="12" width="120" height="80" fill="#e8916c"/>
+  <use xlink:href="#critter" href="#critter" class="gap" x="48" y="54" width="168" height="112" fill="#d97757" stroke-width="0.4" paint-order="stroke"/>
+
+  <text x="290" y="132" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="104" font-weight="700" letter-spacing="-3"><tspan fill="#d97757">m</tspan><tspan class="word">claude</tspan></text>
+</svg>
