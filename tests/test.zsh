@@ -1,5 +1,7 @@
 #!/bin/zsh
-# Test suite for many-claude. No dependencies; run: zsh tests/test.zsh
+# Test suite for many-claude. No dependencies.
+#   zsh tests/test.zsh            run all tests
+#   zsh tests/test.zsh <glob>     run tests whose name matches, e.g. "*unbind*"
 # Every test runs in a subshell with a throwaway HOME and a fake `claude` binary,
 # so the real ~/.claude, ~/.many-claude and ~/.zshrc are never touched.
 
@@ -411,6 +413,9 @@ test_uninstall_purge_logs_out_and_deletes() {
 # --- run ---------------------------------------------------------------------
 
 print "many-claude tests"
-for t in ${(ok)functions[(I)test_*]}; do run_test $t; done
+for t in ${(ok)functions[(I)test_*]}; do
+  [[ -n ${1:-} && ${t#test_} != $~1 ]] && continue
+  run_test $t
+done
 print "\n$PASS passed, $FAIL failed"
 (( FAIL == 0 ))
