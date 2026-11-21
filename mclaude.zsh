@@ -35,11 +35,20 @@ _mclaude_dir() {
 }
 
 _mclaude_link_shared() {
+  emulate -L zsh
   local dir=$1 item
   for item in $MCLAUDE_SHARED; do
     [[ -e $MCLAUDE_BASE/$item && ! -e $dir/$item && ! -L $dir/$item ]] || continue
     ln -s "$MCLAUDE_BASE/$item" "$dir/$item"
   done
+}
+
+# Drop the map line whose path equals $1 (path = line minus its last word).
+_mclaude_unmap() {
+  emulate -L zsh
+  [[ -f $MCLAUDE_MAP ]] || return 0
+  local tmp=$(mktemp)
+  awk -v p="$1" '{ l = $0; sub(/[ \t]+[^ \t]+[ \t]*$/, "", l); sub(/\/$/, "", l) } l != p' $MCLAUDE_MAP > $tmp && mv $tmp $MCLAUDE_MAP
 }
 
 _mclaude_exists() {
@@ -50,8 +59,9 @@ _mclaude_exists() {
 
 # Wrapper: run Claude Code with the profile bound to $PWD.
 claude() {
+  emulate -L zsh   # ignore user shell options (nounset, sh_word_split, ...)
   local profile dir
-  if [[ -n $CLAUDE_CONFIG_DIR && -z $MCLAUDE_FORCE ]]; then
+  if [[ -n ${CLAUDE_CONFIG_DIR:-} ]]; then
     command claude "$@"; return   # explicit override wins
   fi
   profile=$(_mclaude_resolve)
@@ -65,7 +75,12 @@ claude() {
   fi
 }
 
+_mclaude_usage() {
+  print "usage: mclaude [which|list|add <p>|login [p]|logout [p]|status [p]|bind <p> [path]|unbind [path]|help]"
+}
+
 mclaude() {
+  emulate -L zsh
   local cmd=$1; shift 2>/dev/null
   case $cmd in
     add)
@@ -73,28 +88,22 @@ mclaude() {
       mkdir -p "$MCLAUDE_PROFILES/$1" && chmod 700 "$MCLAUDE_PROFILES/$1"
       _mclaude_link_shared "$MCLAUDE_PROFILES/$1"
       print "created $MCLAUDE_PROFILES/$1 - next: mclaude login $1" ;;
-    login)
+    login|logout|status)
       local p=${1:-$(_mclaude_resolve)}
       _mclaude_exists $p || return 1
-      if [[ $p == default ]]; then command claude auth login
-      else CLAUDE_CONFIG_DIR=$(_mclaude_dir $p) command claude auth login; fi ;;
-    logout)
-      local p=${1:-$(_mclaude_resolve)}
-      _mclaude_exists $p || return 1
-      if [[ $p == default ]]; then command claude auth logout
-      else CLAUDE_CONFIG_DIR=$(_mclaude_dir $p) command claude auth logout; fi ;;
+      if [[ $p == default ]]; then command claude auth $cmd
+      else CLAUDE_CONFIG_DIR=$(_mclaude_dir $p) command claude auth $cmd; fi ;;
     bind)
       [[ -n $1 ]] || { print -u2 "usage: mclaude bind <profile> [path]"; return 1 }
       _mclaude_exists $1 || return 1
       local target=${2:-$PWD}; target=${target:A}
       mkdir -p $MCLAUDE_HOME
-      [[ -f $MCLAUDE_MAP ]] && { local tmp=$(mktemp); awk -v p="$target" '$1 != p' $MCLAUDE_MAP > $tmp && mv $tmp $MCLAUDE_MAP }
+      _mclaude_unmap $target
       print "$target $1" >> $MCLAUDE_MAP
       print "bound $target -> $1" ;;
     unbind)
       local target=${1:-$PWD}; target=${target:A}
-      [[ -f $MCLAUDE_MAP ]] || return 0
-      local tmp=$(mktemp); awk -v p="$target" '$1 != p' $MCLAUDE_MAP > $tmp && mv $tmp $MCLAUDE_MAP
+      _mclaude_unmap $target
       print "unbound $target" ;;
     which|"")
       local p=$(_mclaude_resolve)
@@ -105,13 +114,10 @@ mclaude() {
       print "  default ($MCLAUDE_BASE)"
       for d in $MCLAUDE_PROFILES/*(N/); do print "  ${d:t}"; done
       print "bindings ($MCLAUDE_MAP):"
-      [[ -f $MCLAUDE_MAP ]] && sed 's/^/  /' $MCLAUDE_MAP ;;
-    status)
-      local p=${1:-$(_mclaude_resolve)}
-      _mclaude_exists $p || return 1
-      if [[ $p == default ]]; then command claude auth status
-      else CLAUDE_CONFIG_DIR=$(_mclaude_dir $p) command claude auth status; fi ;;
+      if [[ -f $MCLAUDE_MAP ]]; then sed 's/^/  /' $MCLAUDE_MAP; fi ;;
+    help|-h|--help)
+      _mclaude_usage ;;
     *)
-      print "usage: mclaude [which|list|add <p>|login [p]|logout [p]|status [p]|bind <p> [path]|unbind [path]]" ;;
+      _mclaude_usage >&2; return 1 ;;
   esac
 }
