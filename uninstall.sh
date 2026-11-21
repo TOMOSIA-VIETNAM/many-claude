@@ -24,6 +24,7 @@ if (( ${#profiles} )); then
   fi
   if (( ! purge )); then
     rm -f $home/mclaude.zsh $home/ccp.zsh $home/projects.conf
+    rm -rf $home/completions
     print "Removed mclaude. Profiles kept in $home/profiles"
     exit 0
   fi

@@ -1,0 +1,51 @@
+#compdef mclaude
+# zsh completion for mclaude. install.sh copies it to ~/.mclaude/completions,
+# which mclaude.zsh adds to fpath.
+
+local profiles_dir=${MCLAUDE_PROFILES:-${MCLAUDE_HOME:-$HOME/.mclaude}/profiles}
+local -a commands profiles bound
+local line
+
+commands=(
+  'which:show the profile for the current directory'
+  'list:list profiles, accounts and bindings'
+  'add:create a profile'
+  'remove:sign out and delete a profile'
+  'bind:bind a folder to a profile'
+  'unbind:remove a folder binding'
+  'login:sign in for a profile'
+  'logout:sign out of a profile'
+  'status:show sign-in status of a profile'
+  'doctor:check the setup for problems'
+  'version:print the mclaude version'
+  'help:show usage'
+)
+profiles=($profiles_dir/*(N/:t))
+
+if (( CURRENT == 2 )); then
+  _describe -t commands 'mclaude command' commands
+  return
+fi
+
+case $words[2] in
+  add)
+    _message 'new profile name' ;;
+  remove)
+    _arguments '(-y --yes)'{-y,--yes}'[do not ask for confirmation]' "1:profile:(${(j: :)${(@q)profiles}})" ;;
+  login|logout|status)
+    (( CURRENT == 3 )) && compadd -- default $profiles ;;
+  bind)
+    if (( CURRENT == 3 )); then
+      compadd -- default $profiles
+    elif (( CURRENT == 4 )); then
+      _directories
+    fi ;;
+  unbind)
+    if (( CURRENT == 3 )); then
+      local -a reply
+      local profile
+      (( $+functions[_mclaude_bindings] )) && _mclaude_bindings
+      for line profile in "${reply[@]}"; do bound+=("$line"); done
+      _alternative 'bound:bound folder:compadd -a bound' 'directories:folder:_directories'
+    fi ;;
+esac
