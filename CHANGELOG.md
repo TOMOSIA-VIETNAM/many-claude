@@ -18,6 +18,6 @@ First release.
 - Shared config: `settings.json`, `CLAUDE.md`, `keybindings.json`, `skills`, `plugins`, `hooks`, `agents`, `commands`, `output-styles` and `statusline.sh` are symlinked from `~/.claude` into every profile; login, `.claude.json` and `projects/` stay per profile.
 - `install.sh` / `uninstall.sh`, with migration from earlier layouts (`~/.many-claude`, `ccp`, `~/.config/claude-switch`). Deleting profiles on uninstall is opt-in.
 - Test suite (`zsh tests/test.zsh`) and CI on GitHub Actions (macOS).
-- English and Vietnamese README, logo, MIT license.
+- English and Vietnamese README, logo, MIT license, CONTRIBUTING.md, SECURITY.md and Dependabot for GitHub Actions.
 
 [0.1.0]: https://github.com/TOMOSIA-VIETNAM/mclaude/releases/tag/v0.1.0

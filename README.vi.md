@@ -27,6 +27,18 @@
 
 Lệnh điều khiển là `mclaude`. Đây là shell function do tool này định nghĩa (không phải lệnh có sẵn của hệ thống hay của Claude Code), được nạp vào zsh khi cài đặt.
 
+## Vì sao cần
+
+Claude Code đăng nhập một account cho mỗi thư mục config, và mặc định mọi thứ dùng chung `~/.claude`. Nếu bạn làm việc với nhiều subscription — của công ty, của khách hàng, của riêng bạn — mỗi lần đổi là một lần đăng xuất rồi đăng nhập lại, và rất dễ chạy dự án của khách hàng bằng nhầm account.
+
+`mclaude` để thư mục quyết định:
+
+- **Công ty và khách hàng:** `~/Project/ClientX` luôn dùng account do khách hàng trả tiền, phần còn lại của `~/Project` dùng account công ty.
+- **Công việc và cá nhân:** dự án riêng dùng subscription cá nhân, repo công việc thì không bao giờ.
+- **Tách history và memory:** mỗi account giữ hội thoại và memory dự án riêng, nên dữ liệu của khách hàng này không lẫn sang khách hàng khác.
+
+Chỉ cần thiết lập một lần cho mỗi thư mục; sau đó chỉ việc `cd` và `claude`.
+
 ## Cách hoạt động
 
 Claude Code đọc biến môi trường `CLAUDE_CONFIG_DIR` để biết thư mục config (gồm phiên đăng nhập, history, memory). Tool tạo cho mỗi account một thư mục config riêng, và bọc lệnh `claude` bằng một shell function:
@@ -175,12 +187,18 @@ Sửa ở `~/.claude` là mọi profile cùng nhận. Muốn chia sẻ thêm m�
 | `MCLAUDE_PROFILES` | `$MCLAUDE_HOME/profiles` | Nơi chứa thư mục các profile |
 | `MCLAUDE_BASE` | `~/.claude` | Profile `default` và nguồn config dùng chung |
 
+## Giới hạn
+
+- **Chỉ zsh trên macOS.** Chưa hỗ trợ bash, fish và Linux.
+- **Chỉ `claude` chạy từ zsh mới đi qua wrapper.** Extension VS Code/JetBrains, Claude desktop app, claude.ai, script `sh`/`bash`, cron job, và gọi trực tiếp binary (`command claude`, `~/.local/bin/claude`) đều dùng config riêng của chúng — thường là `~/.claude`.
+- **Không đổi account giữa session.** Profile được chọn lúc chạy `claude`. Đang trong session mà chuyển dự án thì cần thoát và chạy lại.
+- **Mỗi thư mục một account.** Muốn chạy tạm bằng account khác thì tự đặt `CLAUDE_CONFIG_DIR` (xem bên dưới).
+- **Thiết kế cho account subscription.** Cấu hình dùng API key vẫn chạy theo từng profile, nhưng tool không quản lý key.
+
 ## Lưu ý
 
-- **Không đổi account giữa session.** Profile được chọn lúc chạy `claude`. Đang trong session mà chuyển dự án thì cần thoát và chạy lại.
 - **Override thủ công:** nếu `CLAUDE_CONFIG_DIR` đã được đặt sẵn trong môi trường, wrapper tôn trọng giá trị đó và không tra map. Ví dụ chạy tạm một account khác: `CLAUDE_CONFIG_DIR=~/.mclaude/profiles/client-y claude`.
 - **MCP server cấp user** nằm trong `.claude.json` của từng profile, nên cần thêm lại cho mỗi profile (`claude mcp add --scope user ...`).
-- **Chỉ CLI zsh.** Extension VS Code/JetBrains, script dùng `sh`/`bash`, hoặc gọi trực tiếp binary (`command claude`, `~/.local/bin/claude`) sẽ không đi qua wrapper.
 - **Keychain macOS:** mỗi profile giữ phiên đăng nhập subscription riêng trong Keychain, đăng nhập profile này không thay thế profile khác (đã thử với account thật).
 - Nếu `mclaude login` không chạy được với phiên bản Claude Code của bạn, vào thư mục dự án, chạy `claude` rồi gõ `/login`.
 
@@ -209,6 +227,16 @@ Một lệnh:
 - Gỡ sạch không cần hỏi (dùng cho script): `./uninstall.sh --purge`.
 
 `~/.claude` (profile `default`) không bao giờ bị động tới. Sau khi gỡ, mở terminal mới (hoặc `exec zsh`) để shell hiện tại không còn lệnh `mclaude`.
+
+## Đóng góp
+
+Rất hoan nghênh issue và pull request — xem [CONTRIBUTING.md](CONTRIBUTING.md). Nếu phát hiện vấn đề bảo mật, hãy làm theo [SECURITY.md](SECURITY.md) thay vì mở issue công khai.
+
+## Miễn trừ trách nhiệm
+
+`mclaude` là dự án độc lập, không chính thức. Dự án không liên kết, không được bảo trợ hay hỗ trợ bởi Anthropic. "Claude" và "Claude Code" là thương hiệu của Anthropic, PBC.
+
+Tool chỉ chọn thư mục config mà Claude Code sử dụng; tool không can thiệp vào việc xác thực, token hay dịch vụ của Anthropic. Bạn tự chịu trách nhiệm bảo đảm việc dùng từng account tuân thủ [điều khoản và chính sách của Anthropic](https://www.anthropic.com/legal) cũng như quy định của tổ chức bạn. Phần mềm được cung cấp nguyên trạng, không kèm bảo đảm (xem [LICENSE](LICENSE)).
 
 ## License
 
