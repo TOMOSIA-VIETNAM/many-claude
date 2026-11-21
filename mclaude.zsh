@@ -9,7 +9,7 @@ MCLAUDE_MAP="$MCLAUDE_HOME/projects.conf"
 
 # Items symlinked from $MCLAUDE_BASE into every profile (shared config).
 # Credentials, .claude.json, projects/ (memory), history stay per profile.
-MCLAUDE_SHARED=(settings.json CLAUDE.md RTK.md keybindings.json skills plugins hooks agents commands output-styles statusline.sh)
+MCLAUDE_SHARED=(settings.json CLAUDE.md keybindings.json skills plugins hooks agents commands output-styles statusline.sh)
 
 # Print profile bound to a path (longest matching prefix), or "default".
 _mclaude_resolve() {
