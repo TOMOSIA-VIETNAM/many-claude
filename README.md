@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml"><img alt="test" src="https://github.com/TOMOSIA-VIETNAM/mclaude/actions/workflows/test.yml/badge.svg?branch=master"></a>
+  <a href="https://github.com/TOMOSIA-VIETNAM/mclaude/releases"><img alt="release" src="https://img.shields.io/github/v/release/TOMOSIA-VIETNAM/mclaude?color=4c1"></a>
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
   <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-000000?logo=apple&logoColor=white">
   <img alt="zsh" src="https://img.shields.io/badge/shell-zsh-4EAA25?logo=gnubash&logoColor=white">
@@ -139,8 +140,8 @@ Edit the file by hand or use `mclaude bind` / `mclaude unbind`. Paths reached th
 When a profile is created (and each time `claude` runs with it), these items from `~/.claude` are symlinked into the profile if they exist:
 
 ```
-settings.json  CLAUDE.md  RTK.md  keybindings.json  skills  plugins
-hooks  agents  commands  output-styles  statusline.sh
+settings.json  CLAUDE.md  keybindings.json  skills  plugins  hooks
+agents  commands  output-styles  statusline.sh
 ```
 
 Change something in `~/.claude` and every profile sees it. To share more items, add them to the `MCLAUDE_SHARED` array in `mclaude.zsh`. To give one profile its own copy of an item, delete the symlink in the profile folder and put a real file there — `mclaude` never overwrites existing files.
@@ -163,7 +164,7 @@ Set these before the `source` line in `~/.zshrc` to change the default locations
 - **Manual override:** if `CLAUDE_CONFIG_DIR` is already set in the environment, the wrapper respects it and skips the map. Example of a one-off run with another account: `CLAUDE_CONFIG_DIR=~/.mclaude/profiles/client-y claude`.
 - **User-scope MCP servers** live in each profile's `.claude.json`, so add them again per profile (`claude mcp add --scope user ...`).
 - **zsh CLI only.** VS Code/JetBrains extensions, `sh`/`bash` scripts, or calling the binary directly (`command claude`, `~/.local/bin/claude`) bypass the wrapper.
-- **macOS Keychain:** subscription logins are stored in the Keychain. After the first login for a new profile, run `mclaude status default` to make sure the original account was not replaced. If it was, profiles are sharing one Keychain entry — please report it so we can switch to per-profile tokens (`claude setup-token`).
+- **macOS Keychain:** each profile keeps its own subscription login in the Keychain, so signing in to one profile does not replace another (tested with real accounts).
 - If `mclaude login` does not work with your Claude Code version, go to the project folder, run `claude`, then type `/login`.
 
 ## Running tests
@@ -174,7 +175,7 @@ zsh tests/test.zsh
 
 No dependencies. Each test runs in a temporary HOME with a fake `claude`, so the real `~/.claude`, `~/.mclaude` and `~/.zshrc` are never touched. Covered: profile resolution (subdirectories, longest match, sibling paths, spaces, symlinks, `~`, comments), the `CLAUDE_CONFIG_DIR` override, profile creation and shared symlinks, `bind`/`unbind`/`list`/`which`/`help`, `login`/`logout`/`status`, robustness against user shell options, `install.sh` (fresh, re-run, old-layout migration) and `uninstall.sh` (keep or delete profiles, including the interactive prompt).
 
-The tests do not cover real sign-in or the Keychain — check those by hand with real accounts.
+Real sign-in and Keychain separation are not automated; they have been checked by hand with real accounts.
 
 ## Uninstall
 
