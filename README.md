@@ -40,6 +40,7 @@ Claude Code reads the `CLAUDE_CONFIG_DIR` environment variable to locate its con
 ~/.claude/                         # "default" profile + shared config source (never modified by the tool)
 ~/.mclaude/                    # everything the tool owns lives here
 ├── mclaude.zsh                    # the script, sourced from ~/.zshrc
+├── completions/_mclaude           # zsh tab completion
 ├── projects.conf                  # map: path → profile
 └── profiles/
     ├── client-x/                  # account B
@@ -101,17 +102,33 @@ mclaude status default                    # original account, unaffected
 | Command | Description |
 |---|---|
 | `mclaude` / `mclaude which` | Print the profile and config dir for the current directory |
-| `mclaude list` | List profiles and all bindings |
+| `mclaude list` | List profiles with the account each is signed in to, and all bindings |
 | `mclaude add <profile>` | Create a profile in `~/.mclaude/profiles/<profile>` with shared-config symlinks |
+| `mclaude remove [-y] <profile>` | Sign out, delete the profile folder (login, memory, history) and drop its bindings. Asks for confirmation unless `-y` |
 | `mclaude login [profile]` | Sign in for a profile (default: the current directory's profile) |
 | `mclaude logout [profile]` | Sign out of a profile |
 | `mclaude status [profile]` | Show a profile's sign-in status |
 | `mclaude bind <profile> [path]` | Bind a folder to a profile (default: current directory). Re-binding the same folder replaces the old line |
 | `mclaude unbind [path]` | Remove a folder's binding (default: current directory) |
+| `mclaude doctor` | Check the setup: `claude` on PATH, the `~/.zshrc` hook, sign-in of every profile, two profiles on the same account, broken shared symlinks, bindings to missing profiles or folders. Exits non-zero if something is broken |
+| `mclaude version` | Print the mclaude version (also `--version`, `-v`) |
 | `mclaude help` | Show usage |
 | `claude ...` | Run Claude Code with the current directory's profile; all arguments are passed through unchanged |
 
 The name `default` is reserved for `~/.claude`.
+
+Example `mclaude list`:
+
+```
+profiles:
+  default   me@personal.dev  (/Users/me/.claude)
+  client-x  me@client-x.com
+  client-y  not signed in
+bindings (/Users/me/.mclaude/projects.conf):
+  /Users/me/Project/ClientX client-x
+```
+
+**Tab completion:** `install.sh` installs a zsh completion for `mclaude` (commands, profile names, folders; `unbind` offers the bound folders). It works whether `compinit` runs before or after the `source` line in `~/.zshrc`.
 
 ## The `projects.conf` map
 
@@ -173,7 +190,7 @@ Set these before the `source` line in `~/.zshrc` to change the default locations
 zsh tests/test.zsh
 ```
 
-No dependencies. Each test runs in a temporary HOME with a fake `claude`, so the real `~/.claude`, `~/.mclaude` and `~/.zshrc` are never touched. Covered: profile resolution (subdirectories, longest match, sibling paths, spaces, symlinks, `~`, comments), the `CLAUDE_CONFIG_DIR` override, profile creation and shared symlinks, `bind`/`unbind`/`list`/`which`/`help`, `login`/`logout`/`status`, robustness against user shell options, `install.sh` (fresh, re-run, old-layout migration) and `uninstall.sh` (keep or delete profiles, including the interactive prompt).
+No dependencies. Each test runs in a temporary HOME with a fake `claude`, so the real `~/.claude`, `~/.mclaude` and `~/.zshrc` are never touched. Covered: profile resolution (subdirectories, longest match, sibling paths, spaces, symlinks, `~`, comments), the `CLAUDE_CONFIG_DIR` override, profile creation and shared symlinks, `bind`/`unbind`/`list` (with accounts)/`which`/`help`/`version`, `remove` (confirmation, `-y`, bindings dropped), `doctor`, `login`/`logout`/`status`, tab completion, robustness against user shell options, `install.sh` (fresh, re-run, old-layout migration) and `uninstall.sh` (keep or delete profiles, including the interactive prompt).
 
 Real sign-in and Keychain separation are not automated; they have been checked by hand with real accounts.
 
@@ -187,7 +204,7 @@ One command:
 
 - Removes the `source` line from `~/.zshrc`.
 - If profiles exist, asks whether to delete them (default **no**):
-  - `N`: removes only `mclaude.zsh` and `projects.conf`, keeping `~/.mclaude/profiles/` — reinstall later to keep using them.
+  - `N`: removes only `mclaude.zsh`, the completion and `projects.conf`, keeping `~/.mclaude/profiles/` — reinstall later to keep using them.
   - `y`: signs out of each profile, then deletes all of `~/.mclaude`. **This permanently deletes the login sessions, memory and history of those accounts.**
 - Remove everything without asking (for scripts): `./uninstall.sh --purge`.
 

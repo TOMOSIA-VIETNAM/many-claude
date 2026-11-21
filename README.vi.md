@@ -40,6 +40,7 @@ Claude Code đọc biến môi trường `CLAUDE_CONFIG_DIR` để biết thư m
 ~/.claude/                         # profile "default" + nguồn config dùng chung (không bị tool sửa)
 ~/.mclaude/                    # mọi thứ của tool nằm ở đây
 ├── mclaude.zsh                    # script, được source từ ~/.zshrc
+├── completions/_mclaude           # zsh tab completion
 ├── projects.conf                  # map: đường dẫn → profile
 └── profiles/
     ├── client-x/                  # account B
@@ -101,17 +102,33 @@ mclaude status default                        # account gốc, không bị ảnh
 | Lệnh | Mô tả |
 |---|---|
 | `mclaude` / `mclaude which` | In profile và thư mục config áp dụng cho thư mục hiện tại |
-| `mclaude list` | Liệt kê các profile và toàn bộ binding |
+| `mclaude list` | Liệt kê các profile kèm account đang đăng nhập của từng profile, và toàn bộ binding |
 | `mclaude add <profile>` | Tạo profile mới trong `~/.mclaude/profiles/<profile>` và tạo symlink config dùng chung |
+| `mclaude remove [-y] <profile>` | Đăng xuất, xoá thư mục profile (đăng nhập, memory, history) và bỏ các binding của nó. Hỏi xác nhận trừ khi có `-y` |
 | `mclaude login [profile]` | Đăng nhập cho profile (mặc định: profile của thư mục hiện tại) |
 | `mclaude logout [profile]` | Đăng xuất profile |
 | `mclaude status [profile]` | Xem trạng thái đăng nhập của profile |
 | `mclaude bind <profile> [path]` | Gắn thư mục với profile (mặc định: thư mục hiện tại). Bind lại cùng thư mục sẽ ghi đè, không tạo dòng trùng |
 | `mclaude unbind [path]` | Bỏ gắn thư mục (mặc định: thư mục hiện tại) |
+| `mclaude doctor` | Kiểm tra cài đặt: `claude` có trên PATH, hook trong `~/.zshrc`, trạng thái đăng nhập của từng profile, hai profile dùng chung một account, symlink dùng chung bị hỏng, binding trỏ tới profile hoặc thư mục không tồn tại. Trả mã lỗi khác 0 nếu có lỗi |
+| `mclaude version` | In phiên bản mclaude (hoặc `--version`, `-v`) |
 | `mclaude help` | Hiện hướng dẫn sử dụng |
 | `claude ...` | Chạy Claude Code với profile của thư mục hiện tại; mọi tham số được chuyển tiếp nguyên vẹn |
 
 Tên `default` được dành riêng cho `~/.claude`.
+
+Ví dụ `mclaude list`:
+
+```
+profiles:
+  default   me@personal.dev  (/Users/me/.claude)
+  client-x  me@client-x.com
+  client-y  not signed in
+bindings (/Users/me/.mclaude/projects.conf):
+  /Users/me/Project/ClientX client-x
+```
+
+**Tab completion:** `install.sh` cài sẵn zsh completion cho `mclaude` (lệnh, tên profile, thư mục; `unbind` gợi ý các thư mục đã bind). Hoạt động dù `compinit` chạy trước hay sau dòng `source` trong `~/.zshrc`.
 
 ## File map `projects.conf`
 
@@ -173,7 +190,7 @@ Sửa ở `~/.claude` là mọi profile cùng nhận. Muốn chia sẻ thêm m�
 zsh tests/test.zsh
 ```
 
-Không cần cài thêm gì. Mỗi test chạy trong HOME tạm với một `claude` giả, nên không đụng tới `~/.claude`, `~/.mclaude` hay `~/.zshrc` thật. Test bao phủ: chọn profile theo thư mục (thư mục con, khớp dài nhất, thư mục anh em, dấu cách, symlink, `~`, comment), override bằng `CLAUDE_CONFIG_DIR`, tạo profile và symlink config dùng chung, `bind`/`unbind`/`list`/`which`/`help`, `login`/`logout`/`status`, chịu được option shell của người dùng, `install.sh` (cài mới, chạy lại, chuyển layout cũ) và `uninstall.sh` (giữ hoặc xoá profile, kể cả câu hỏi tương tác).
+Không cần cài thêm gì. Mỗi test chạy trong HOME tạm với một `claude` giả, nên không đụng tới `~/.claude`, `~/.mclaude` hay `~/.zshrc` thật. Test bao phủ: chọn profile theo thư mục (thư mục con, khớp dài nhất, thư mục anh em, dấu cách, symlink, `~`, comment), override bằng `CLAUDE_CONFIG_DIR`, tạo profile và symlink config dùng chung, `bind`/`unbind`/`list` (kèm account)/`which`/`help`/`version`, `remove` (xác nhận, `-y`, bỏ binding), `doctor`, `login`/`logout`/`status`, tab completion, chịu được option shell của người dùng, `install.sh` (cài mới, chạy lại, chuyển layout cũ) và `uninstall.sh` (giữ hoặc xoá profile, kể cả câu hỏi tương tác).
 
 Đăng nhập thật và việc tách Keychain không có test tự động; đã được kiểm tra thủ công với account thật.
 
@@ -187,7 +204,7 @@ Một lệnh:
 
 - Xoá dòng `source` trong `~/.zshrc`.
 - Nếu có profile, script hỏi có xoá không (mặc định **không**):
-  - Trả lời `N`: chỉ gỡ `mclaude.zsh` và `projects.conf`, giữ lại `~/.mclaude/profiles/` — cài lại sau sẽ dùng tiếp được.
+  - Trả lời `N`: chỉ gỡ `mclaude.zsh`, completion và `projects.conf`, giữ lại `~/.mclaude/profiles/` — cài lại sau sẽ dùng tiếp được.
   - Trả lời `y`: đăng xuất từng profile rồi xoá toàn bộ `~/.mclaude`. **Thao tác này xoá vĩnh viễn phiên đăng nhập, memory và history của các account đó.**
 - Gỡ sạch không cần hỏi (dùng cho script): `./uninstall.sh --purge`.
 

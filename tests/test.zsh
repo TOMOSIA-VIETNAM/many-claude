@@ -27,8 +27,14 @@ setup() {
   print '# shared' > $HOME/.claude/CLAUDE.md
   : > $HOME/.zshrc
   # Fake claude: reports which config dir and args it received.
+  # "auth status --json" prints <config dir>/fake-auth.json (see sign_in), else logged out.
   print -r -- '#!/bin/sh
 echo "CFG=${CLAUDE_CONFIG_DIR:-<default>} ARGS=$*" >> "$FAKE_LOG"
+if [ "$*" = "auth status --json" ]; then
+  f="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/fake-auth.json"
+  if [ -f "$f" ]; then cat "$f"; exit 0; fi
+  echo "{\"loggedIn\": false, \"authMethod\": \"none\"}"; exit 1
+fi
 echo "CFG=${CLAUDE_CONFIG_DIR:-<default>} ARGS=$*"' > $T/bin/claude
   chmod +x $T/bin/claude
   export FAKE_LOG=$T/claude.log
@@ -50,6 +56,15 @@ assert_contains() {  # haystack needle [message]
 
 assert_not_contains() {
   [[ $1 != *$2* ]] || fail "${3:-assert_not_contains}: [$2] found in [$1]"
+}
+
+# Make the fake claude report a profile as signed in: sign_in <config dir> [email].
+sign_in() {
+  if [[ -n ${2:-} ]]; then
+    print -r -- "{\"loggedIn\": true, \"authMethod\": \"claude.ai\", \"email\": \"$2\"}" > $1/fake-auth.json
+  else
+    print -r -- '{"loggedIn": true, "authMethod": "apiKey"}' > $1/fake-auth.json
+  fi
 }
 
 profile_at() { ( cd $1 && mclaude which ) | awk '{print $1}' }
@@ -210,10 +225,169 @@ test_unbind_path_with_spaces() {
 test_list_shows_profiles_and_bindings() {
   mclaude add work >/dev/null; mclaude bind work $T/proj >/dev/null
   local out=$(mclaude list)
-  assert_contains "$out" "default ($HOME/.claude)" &&
+  assert_contains "$out" "($HOME/.claude)" &&
   assert_contains "$out" "  work" &&
   assert_contains "$out" "$T/proj work"
 }
+
+test_list_shows_account_per_profile() {
+  mclaude add work >/dev/null; mclaude add api >/dev/null; mclaude add client-long >/dev/null
+  sign_in $HOME/.claude me@home.dev
+  sign_in $HOME/.mclaude/profiles/work me@work.dev
+  sign_in $HOME/.mclaude/profiles/api
+  local out=$(mclaude list)
+  assert_contains "$out" "  default      me@home.dev  ($HOME/.claude)" &&
+  assert_contains "$out" "  work         me@work.dev" &&
+  assert_contains "$out" "  api          signed in (apiKey)" &&
+  assert_contains "$out" "  client-long  not signed in"
+}
+
+# --- remove ------------------------------------------------------------------
+
+test_remove_yes_logs_out_deletes_and_unbinds() {
+  mkdir -p $T/other
+  mclaude add work >/dev/null; mclaude add keep >/dev/null
+  mclaude bind work $T/proj >/dev/null; mclaude bind keep $T/other >/dev/null
+  print "# note" >> $HOME/.mclaude/projects.conf
+  mclaude bind work "$T/my proj" >/dev/null
+  local out=$(mclaude remove -y work) || fail "remove -y must succeed"
+  assert_eq "removed work" "$out" &&
+  [[ ! -e $HOME/.mclaude/profiles/work && -d $HOME/.mclaude/profiles/keep ]] || fail "wrong profile deleted"
+  assert_contains "$(<$FAKE_LOG)" "CFG=$HOME/.mclaude/profiles/work ARGS=auth logout" &&
+  assert_eq "$T/other keep
+# note" "$(<$HOME/.mclaude/projects.conf)" &&
+  assert_eq default "$(profile_at $T/proj)"
+}
+
+test_remove_flag_after_name() {
+  mclaude add work >/dev/null
+  mclaude remove work --yes >/dev/null || fail "flag after name must work"
+  [[ ! -e $HOME/.mclaude/profiles/work ]]
+}
+
+test_remove_without_tty_or_yes_keeps_profile() {
+  mclaude add work >/dev/null
+  print y | mclaude remove work >/dev/null 2>&1 && fail "must not delete without confirmation"
+  [[ -d $HOME/.mclaude/profiles/work ]] || fail "profile deleted"
+  [[ ! -s $FAKE_LOG ]] || fail "must not log out"
+}
+
+test_remove_confirmed_on_tty() {
+  mclaude add work >/dev/null
+  (sleep 1; print y) | script -q /dev/null zsh -c "source $ROOT/mclaude.zsh; mclaude remove work" >/dev/null || return 1
+  [[ ! -e $HOME/.mclaude/profiles/work ]] || fail "profile kept"
+}
+
+test_remove_answer_n_on_tty_keeps_profile() {
+  mclaude add work >/dev/null
+  (sleep 1; print n) | script -q /dev/null zsh -c "source $ROOT/mclaude.zsh; mclaude remove work" >/dev/null
+  [[ -d $HOME/.mclaude/profiles/work ]] || fail "profile deleted"
+}
+
+test_remove_rejects_bad_args() {
+  local err
+  err=$(mclaude remove 2>&1) && fail "no name must fail"
+  assert_contains "$err" "usage: mclaude remove" || return 1
+  mclaude remove -y default 2>/dev/null && fail "default must be refused"
+  mclaude remove -y ../x 2>/dev/null && fail "path must be refused"
+  mclaude add a >/dev/null; mclaude add b >/dev/null
+  mclaude remove -y a b 2>/dev/null && fail "two names must be refused"
+  mclaude remove -y ghost 2>/dev/null && fail "unknown profile must fail"
+  [[ -d $HOME/.mclaude/profiles/a && -d $HOME/.mclaude/profiles/b && -d $HOME/.claude ]] || fail "something deleted"
+  [[ ! -s $FAKE_LOG ]] || fail "must not log out"
+}
+
+# --- version / doctor --------------------------------------------------------
+
+test_version() {
+  local v=$(sed -n 's/^MCLAUDE_VERSION=//p' $ROOT/mclaude.zsh)
+  [[ $v == <->.<->.<-> ]] || fail "bad version [$v]"
+  assert_eq "mclaude $v" "$(mclaude version)" &&
+  assert_eq "mclaude $v" "$(mclaude --version)" &&
+  assert_contains "$(<$ROOT/CHANGELOG.md)" "## [$v]" "CHANGELOG has an entry for the version"
+}
+
+test_doctor_clean_setup() {
+  $ROOT/install.sh >/dev/null; source $HOME/.mclaude/mclaude.zsh
+  mclaude add work >/dev/null; mclaude bind work $T/proj >/dev/null
+  sign_in $HOME/.claude me@home.dev; sign_in $HOME/.mclaude/profiles/work me@work.dev
+  local out
+  out=$(mclaude doctor) || fail "doctor must pass: $out"
+  assert_contains "$out" "ok    claude: $T/bin/claude" &&
+  assert_contains "$out" "ok    work: me@work.dev" &&
+  assert_contains "$out" "no problems found"
+}
+
+test_doctor_reports_problems() {
+  mclaude add work >/dev/null; mclaude add twin >/dev/null
+  sign_in $HOME/.claude me@home.dev
+  sign_in $HOME/.mclaude/profiles/twin me@home.dev
+  ln -s $T/nowhere $HOME/.mclaude/profiles/work/agents
+  print "$T/gone work\n$T/proj ghost" > $HOME/.mclaude/projects.conf
+  local out
+  out=$(mclaude doctor) && fail "doctor must fail on a broken binding"
+  assert_contains "$out" "does not load mclaude" &&
+  assert_contains "$out" "work: not signed in" &&
+  assert_contains "$out" "work: broken symlink agents" &&
+  assert_contains "$out" "twin: same account as default" &&
+  assert_contains "$out" "binding $T/gone -> work: folder does not exist" &&
+  assert_contains "$out" "FAIL  binding $T/proj -> ghost: profile not found" &&
+  assert_contains "$out" "1 problem(s), 5 warning(s)"
+}
+
+test_doctor_without_claude_binary() {
+  PATH=/usr/bin:/bin
+  local out
+  out=$(mclaude doctor) && fail "must fail without claude"
+  assert_contains "$out" "FAIL  claude: Claude Code is not on PATH"
+}
+
+# --- completion --------------------------------------------------------------
+
+# Run the completion function for a command line, with compsys helpers stubbed to
+# print what they would offer: complete_line mclaude bind ""
+complete_line() {
+  (
+    _describe() { print -r -- "describe ${(P)${@[-1]}}" }
+    compadd() { [[ $1 == -a ]] && { print -r -- "compadd ${(P)2}"; return }; [[ $1 == -- ]] && shift; print -r -- "compadd $*" }
+    _arguments() { print -r -- "arguments $*" }
+    _message() { print -r -- "message $*" }
+    _directories() { print directories }
+    _alternative() { print -r -- "alternative $*"; local a; for a; do eval "${a#*:*:}"; done }
+    local -a words=("$@"); local -i CURRENT=$#
+    setopt extendedglob
+    source $ROOT/completions/_mclaude
+  )
+}
+
+test_completion_offers_commands_profiles_and_paths() {
+  mclaude add work >/dev/null; mclaude add client-x >/dev/null
+  mkdir -p "$T/my proj"
+  mclaude bind work $T/proj >/dev/null; mclaude bind client-x "$T/my proj" >/dev/null
+  local out
+  out=$(complete_line mclaude "")
+  assert_contains "$out" "doctor:check the setup" &&
+  assert_contains "$out" "remove:sign out and delete" &&
+  assert_contains "$out" "version:print" || return 1
+  assert_eq "compadd default client-x work" "$(complete_line mclaude bind "")" &&
+  assert_eq directories "$(complete_line mclaude bind work "")" &&
+  assert_eq "compadd default client-x work" "$(complete_line mclaude status "")" &&
+  assert_contains "$(complete_line mclaude remove "")" "1:profile:(client-x work)" &&
+  assert_eq "message new profile name" "$(complete_line mclaude add "")" || return 1
+  out=$(complete_line mclaude unbind "")
+  assert_contains "$out" "compadd $T/proj $T/my proj" &&
+  assert_contains "$out" directories
+}
+
+test_completion_registers_before_and_after_compinit() {
+  $ROOT/install.sh >/dev/null
+  local r
+  r=$(HOME=$HOME zsh -fc 'autoload -Uz compinit; compinit -u -D; source ~/.mclaude/mclaude.zsh; print $_comps[mclaude]')
+  assert_eq _mclaude "$r" "compinit first" || return 1
+  r=$(HOME=$HOME zsh -fc 'source ~/.mclaude/mclaude.zsh; autoload -Uz compinit; compinit -u -D; print $_comps[mclaude]')
+  assert_eq _mclaude "$r" "compinit after"
+}
+
 
 # --- login / logout / status pass the right config dir -----------------------
 
@@ -259,7 +433,7 @@ test_help_and_unknown_command() {
 test_list_without_map_succeeds() {
   local out
   out=$(mclaude list) || fail "list must exit 0 without a map file"
-  assert_contains "$out" "default ($HOME/.claude)"
+  assert_contains "$out" "default  not signed in  ($HOME/.claude)"
 }
 
 test_add_existing_profile_is_safe() {
@@ -318,7 +492,7 @@ test_install_fails_without_script() {
   mkdir -p $T/repo && cp $ROOT/install.sh $T/repo/
   local err
   err=$($T/repo/install.sh 2>&1) && fail "install must fail without mclaude.zsh"
-  assert_contains "$err" "mclaude.zsh not found" &&
+  assert_contains "$err" "not found next to install.sh" &&
   [[ ! -e $HOME/.mclaude ]] || fail "nothing should be created"
 }
 
@@ -344,6 +518,14 @@ test_uninstall_answer_n_on_tty_keeps_profiles() {
 }
 
 zshrc_hook='[[ -r ~/.mclaude/mclaude.zsh ]] && source ~/.mclaude/mclaude.zsh'
+
+test_install_copies_completion() {
+  $ROOT/install.sh >/dev/null || return 1
+  cmp -s $ROOT/completions/_mclaude $HOME/.mclaude/completions/_mclaude || fail "completion not copied"
+  mkdir -p $HOME/.mclaude/profiles/work
+  print n | $ROOT/uninstall.sh >/dev/null 2>&1
+  [[ ! -e $HOME/.mclaude/completions ]] || fail "completion left after uninstall"
+}
 
 test_install_fresh() {
   $ROOT/install.sh >/dev/null || return 1

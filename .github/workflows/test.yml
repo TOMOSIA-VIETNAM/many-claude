@@ -24,7 +24,7 @@ jobs:
 
       - name: Syntax check
         run: |
-          for f in mclaude.zsh install.sh uninstall.sh tests/test.zsh; do
+          for f in mclaude.zsh completions/_mclaude install.sh uninstall.sh tests/test.zsh; do
             zsh -n "$f"
           done
 
