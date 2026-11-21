@@ -1,5 +1,7 @@
 # many-claude — One Claude Code account per project
 
+[![test](https://github.com/TOMOSIA-VIETNAM/many-claude/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/TOMOSIA-VIETNAM/many-claude/actions/workflows/test.yml)
+
 English | [Tiếng Việt](README.vi.md)
 
 `many-claude` lets you use several Claude Code (subscription) accounts on one machine. Each project is bound to an account; when you `cd` into the project and run `claude`, the matching account is used automatically.
