@@ -139,8 +139,8 @@ Bạn có thể sửa file này bằng tay hoặc dùng `mclaude bind` / `mclaud
 Khi tạo profile (và mỗi lần chạy `claude` với profile đó), các mục sau trong `~/.claude` được symlink sang profile nếu tồn tại:
 
 ```
-settings.json  CLAUDE.md  RTK.md  keybindings.json  skills  plugins
-hooks  agents  commands  output-styles  statusline.sh
+settings.json  CLAUDE.md  keybindings.json  skills  plugins  hooks
+agents  commands  output-styles  statusline.sh
 ```
 
 Sửa ở `~/.claude` là mọi profile cùng nhận. Muốn chia sẻ thêm mục khác, thêm vào mảng `MCLAUDE_SHARED` trong `mclaude.zsh`. Muốn một profile dùng config riêng cho một mục, xoá symlink trong thư mục profile và đặt file thật vào đó — `mclaude` không ghi đè file đã có.
@@ -163,7 +163,7 @@ Sửa ở `~/.claude` là mọi profile cùng nhận. Muốn chia sẻ thêm m�
 - **Override thủ công:** nếu `CLAUDE_CONFIG_DIR` đã được đặt sẵn trong môi trường, wrapper tôn trọng giá trị đó và không tra map. Ví dụ chạy tạm một account khác: `CLAUDE_CONFIG_DIR=~/.mclaude/profiles/client-y claude`.
 - **MCP server cấp user** nằm trong `.claude.json` của từng profile, nên cần thêm lại cho mỗi profile (`claude mcp add --scope user ...`).
 - **Chỉ CLI zsh.** Extension VS Code/JetBrains, script dùng `sh`/`bash`, hoặc gọi trực tiếp binary (`command claude`, `~/.local/bin/claude`) sẽ không đi qua wrapper.
-- **Keychain macOS:** phiên đăng nhập subscription được lưu trong Keychain. Sau lần login đầu tiên cho một profile mới, hãy chạy `mclaude status default` để chắc account gốc không bị thay thế. Nếu bị thay thế, các profile đang dùng chung một mục Keychain — hãy báo lại để chuyển sang cơ chế token riêng (`claude setup-token`).
+- **Keychain macOS:** mỗi profile giữ phiên đăng nhập subscription riêng trong Keychain, đăng nhập profile này không thay thế profile khác (đã thử với account thật).
 - Nếu `mclaude login` không chạy được với phiên bản Claude Code của bạn, vào thư mục dự án, chạy `claude` rồi gõ `/login`.
 
 ## Chạy test
@@ -174,7 +174,7 @@ zsh tests/test.zsh
 
 Không cần cài thêm gì. Mỗi test chạy trong HOME tạm với một `claude` giả, nên không đụng tới `~/.claude`, `~/.mclaude` hay `~/.zshrc` thật. Test bao phủ: chọn profile theo thư mục (thư mục con, khớp dài nhất, thư mục anh em, dấu cách, symlink, `~`, comment), override bằng `CLAUDE_CONFIG_DIR`, tạo profile và symlink config dùng chung, `bind`/`unbind`/`list`/`which`/`help`, `login`/`logout`/`status`, chịu được option shell của người dùng, `install.sh` (cài mới, chạy lại, chuyển layout cũ) và `uninstall.sh` (giữ hoặc xoá profile, kể cả câu hỏi tương tác).
 
-Test không kiểm tra đăng nhập thật và Keychain — phần đó cần thử thủ công với account thật.
+Đăng nhập thật và việc tách Keychain không có test tự động; đã được kiểm tra thủ công với account thật.
 
 ## Gỡ cài đặt
 

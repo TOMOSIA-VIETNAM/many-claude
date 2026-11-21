@@ -34,4 +34,4 @@ zsh tests/test.zsh '*unbind*'    # run tests whose name (without test_ prefix) m
 
 ## Tests
 
-`tests/test.zsh` is a self-contained runner: every `test_*` function runs in its own subshell with a temporary `HOME` and a fake `claude` on `PATH` that echoes and logs (`$FAKE_LOG`) the `CLAUDE_CONFIG_DIR` and arguments it received. `fail` exits the subshell, so a failed assertion stops the test. The interactive `read -q` prompt in `uninstall.sh` is exercised through a pseudo-tty via `script`. Real sign-in and macOS Keychain separation between profiles are not testable here and are still unverified with real accounts.
+`tests/test.zsh` is a self-contained runner: every `test_*` function runs in its own subshell with a temporary `HOME` and a fake `claude` on `PATH` that echoes and logs (`$FAKE_LOG`) the `CLAUDE_CONFIG_DIR` and arguments it received. `fail` exits the subshell, so a failed assertion stops the test. The interactive `read -q` prompt in `uninstall.sh` is exercised through a pseudo-tty via `script`. Real sign-in and macOS Keychain separation between profiles are not testable here; they have been verified by hand with real accounts.
