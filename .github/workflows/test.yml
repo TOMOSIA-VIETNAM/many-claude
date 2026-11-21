@@ -1,0 +1,32 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # The scripts target macOS/BSD tools (sed -i '', stat -f, script -q).
+    runs-on: macos-latest
+    # Branch pushes already run the suite; on pull_request run only for forks to avoid duplicate runs.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Syntax check
+        run: |
+          for f in mclaude.zsh install.sh uninstall.sh tests/test.zsh; do
+            zsh -n "$f"
+          done
+
+      - name: Run tests
+        run: zsh tests/test.zsh

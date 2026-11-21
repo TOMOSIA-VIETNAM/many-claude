@@ -1,5 +1,7 @@
 # many-claude — Mỗi dự án một account Claude Code
 
+[![test](https://github.com/TOMOSIA-VIETNAM/many-claude/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/TOMOSIA-VIETNAM/many-claude/actions/workflows/test.yml)
+
 [English](README.md) | Tiếng Việt
 
 `many-claude` giúp bạn dùng nhiều account Claude Code (subscription) trên cùng một máy. Mỗi dự án được gắn với một account; khi bạn `cd` vào thư mục dự án và gõ `claude`, account tương ứng sẽ tự động được dùng.
