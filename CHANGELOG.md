@@ -3,6 +3,12 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- `install.sh` and `uninstall.sh` print each finished step with a check mark (green on a terminal; plain when output is piped or `NO_COLOR` is set).
+
 ## [0.1.0] - 2026-11-21
 
 First release.
@@ -16,7 +22,7 @@ First release.
 - `mclaude doctor` checks `claude` on PATH, the `~/.zshrc` hook, sign-in of every profile, profiles sharing one account, broken shared symlinks and bindings to missing profiles or folders.
 - zsh tab completion for `mclaude`, installed by `install.sh`.
 - Shared config: `settings.json`, `CLAUDE.md`, `keybindings.json`, `skills`, `plugins`, `hooks`, `agents`, `commands`, `output-styles` and `statusline.sh` are symlinked from `~/.claude` into every profile; login, `.claude.json` and `projects/` stay per profile.
-- `install.sh` / `uninstall.sh`, with migration from earlier layouts (`~/.many-claude`, `ccp`, `~/.config/claude-switch`). Deleting profiles on uninstall is opt-in.
+- `install.sh` / `uninstall.sh`, with migration from earlier layouts (`ccp`, `~/.config/claude-switch`). Deleting profiles on uninstall is opt-in.
 - Test suite (`zsh tests/test.zsh`) and CI on GitHub Actions (macOS).
 - English and Vietnamese README, logo, MIT license, CONTRIBUTING.md, SECURITY.md and Dependabot for GitHub Actions.
 

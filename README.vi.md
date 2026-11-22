@@ -75,7 +75,6 @@ Một lệnh:
 `install.sh` sẽ:
 - Tạo `~/.mclaude/` (gồm `profiles/` và `projects.conf`) và **copy** `mclaude.zsh` vào đó — cài xong có thể xoá thư mục repo.
 - Thêm một dòng `source ~/.mclaude/mclaude.zsh` vào cuối `~/.zshrc` (chỉ thêm một lần).
-- Nâng cấp từ tên cũ `many-claude`: chuyển `~/.many-claude` (profile, binding) sang `~/.mclaude` và thay dòng cũ trong `~/.zshrc`. Sau đó kiểm tra `mclaude status <profile>`; nếu profile báo chưa đăng nhập thì login lại.
 - Dọn layout cũ `~/.config/claude-switch` nếu có.
 
 Chạy lại `install.sh` bất cứ lúc nào để cập nhật script; profile và binding được giữ nguyên.

@@ -75,7 +75,6 @@ One command:
 `install.sh` will:
 - Create `~/.mclaude/` (with `profiles/` and `projects.conf`) and **copy** `mclaude.zsh` into it — you can delete the repo afterwards.
 - Append one `source ~/.mclaude/mclaude.zsh` line to `~/.zshrc` (only once).
-- Upgrade from the earlier `many-claude` name: move `~/.many-claude` (profiles, bindings) to `~/.mclaude` and replace the old `~/.zshrc` line. Afterwards check `mclaude status <profile>`; sign in again if a profile reports logged out.
 - Clean up the old `~/.config/claude-switch` layout if present.
 
 Re-run `install.sh` any time to update the script; profiles and bindings are kept.

@@ -26,7 +26,7 @@ zsh tests/test.zsh '*unbind*'    # run tests whose name (without test_ prefix) m
 - Completion: `mclaude.zsh` prepends `~/.mclaude/completions` to `fpath` and calls `compdef` if `compinit` already ran, so either order in `~/.zshrc` works. `_mclaude` reuses `_mclaude_bindings` for `unbind`.
 - Map format: one `<path> <profile>` per line; the profile is the **last word**, so paths may contain spaces. `_mclaude_bindings` (used by the resolver, `doctor` and completion), `_mclaude_unmap` (bind/unbind) and `_mclaude_unmap_profile` (remove) rely on this rule — change them together.
 - Shared config: `_mclaude_link_shared` symlinks the items in `MCLAUDE_SHARED` from `~/.claude` into each profile (on `add` and on every wrapper run), never overwriting existing files or symlinks. Login, `.claude.json` and `projects/` stay per profile.
-- `install.sh` / `uninstall.sh` own the `~/.zshrc` hook (`# mclaude` marker + source line) and also clean up earlier layouts (`~/.config/claude-switch`, the old `ccp` command/`ccp.zsh`, the `~/.many-claude` home and `# many-claude` hook from before the rename — `install.sh` moves that home to `~/.mclaude`). Keep that migration code when touching them.
+- `install.sh` / `uninstall.sh` own the `~/.zshrc` hook (`# mclaude` marker + source line) and also clean up earlier layouts (`~/.config/claude-switch`, the old `ccp` command/`ccp.zsh`). Keep that migration code when touching them.
 
 ## Invariants
 
