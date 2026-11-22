@@ -527,6 +527,17 @@ test_install_copies_completion() {
   [[ ! -e $HOME/.mclaude/completions ]] || fail "completion left after uninstall"
 }
 
+test_install_and_uninstall_mark_steps_done() {
+  local out
+  out=$($ROOT/install.sh) || return 1
+  assert_contains "$out" "✓ Added mclaude hook to $HOME/.zshrc" &&
+  assert_contains "$out" "✓ mclaude installed in $HOME/.mclaude" || return 1
+  [[ $out != *$'\e['* ]] || fail "no color codes when stdout is not a terminal"
+  out=$($ROOT/uninstall.sh --purge) || return 1
+  assert_contains "$out" "✓ Removed mclaude hook from $HOME/.zshrc" &&
+  assert_contains "$out" "✓ mclaude uninstalled"
+}
+
 test_install_fresh() {
   $ROOT/install.sh >/dev/null || return 1
   [[ -f $HOME/.mclaude/mclaude.zsh && ! -L $HOME/.mclaude/mclaude.zsh ]] || fail "script not copied"
@@ -545,43 +556,17 @@ test_install_is_idempotent_and_keeps_data() {
 }
 
 test_install_migrates_old_layouts() {
-  mkdir -p $HOME/.config/claude-switch $HOME/.many-claude
+  mkdir -p $HOME/.config/claude-switch $HOME/.mclaude
   ln -s /nowhere $HOME/.config/claude-switch/ccp.zsh
-  print old > $HOME/.many-claude/ccp.zsh
+  print old > $HOME/.mclaude/ccp.zsh
   print -l 'export KEEP=1' '# Per-project Claude Code accounts' \
-    '[[ -r ~/.config/claude-switch/ccp.zsh ]] && source ~/.config/claude-switch/ccp.zsh' \
-    '# many-claude' '[[ -r ~/.many-claude/ccp.zsh ]] && source ~/.many-claude/ccp.zsh' \
-    '[[ -r ~/.many-claude/mclaude.zsh ]] && source ~/.many-claude/mclaude.zsh' > $HOME/.zshrc
+    '[[ -r ~/.config/claude-switch/ccp.zsh ]] && source ~/.config/claude-switch/ccp.zsh' > $HOME/.zshrc
   $ROOT/install.sh >/dev/null || return 1
   local rc=$(<$HOME/.zshrc)
   assert_not_contains "$rc" "ccp.zsh" &&
-  assert_not_contains "$rc" "many-claude" &&
   assert_contains "$rc" "export KEEP=1" &&
   assert_eq 1 "$(grep -cF $zshrc_hook $HOME/.zshrc)" &&
   [[ ! -e $HOME/.config/claude-switch && ! -e $HOME/.mclaude/ccp.zsh ]] || fail "old files left"
-}
-
-test_install_moves_many_claude_home() {
-  mkdir -p $HOME/.many-claude/profiles/work
-  print 'secret' > $HOME/.many-claude/profiles/work/.claude.json
-  print "$T/proj work" > $HOME/.many-claude/projects.conf
-  $ROOT/install.sh >/dev/null || return 1
-  [[ ! -e $HOME/.many-claude ]] || fail "old home left"
-  assert_eq secret "$(<$HOME/.mclaude/profiles/work/.claude.json)" &&
-  assert_eq "$T/proj work" "$(<$HOME/.mclaude/projects.conf)"
-}
-
-test_install_keeps_old_home_when_both_exist() {
-  mkdir -p $HOME/.many-claude/profiles/old $HOME/.mclaude/profiles/new
-  local err=$($ROOT/install.sh 2>&1 >/dev/null) || fail "install must succeed"
-  assert_contains "$err" "both" &&
-  [[ -d $HOME/.many-claude/profiles/old && -d $HOME/.mclaude/profiles/new ]] || fail "data touched"
-}
-
-test_uninstall_removes_old_many_claude_hook() {
-  print -l 'export KEEP=1' '# many-claude' '[[ -r ~/.many-claude/mclaude.zsh ]] && source ~/.many-claude/mclaude.zsh' > $HOME/.zshrc
-  $ROOT/uninstall.sh >/dev/null || return 1
-  assert_eq "export KEEP=1" "$(<$HOME/.zshrc)"
 }
 
 test_installed_hook_works_in_new_shell() {
